@@ -1,6 +1,7 @@
 # Table of contents
 
 * [SoroWorks](README.md)
+* [Using the tools together](workflow.md)
 
 ## SoroForge — deploy
 

@@ -23,6 +23,8 @@ SoroWorks is a suite of three complementary open-source tools, written in Go, th
 
 You **deploy** a contract with SoroForge, **catalog** its interface in SoroVault so tools and people know what it exposes, and **verify** its behavior and ongoing health with SoroProbe. Each tool is useful entirely on its own, but together they form a coherent workflow for building on Soroban with confidence.
 
+The connection is real, not just conceptual: SoroForge registers each confirmed deploy with SoroVault, and SoroProbe types simulate arguments from the interface SoroVault decoded. See [Using the tools together](workflow.md).
+
 ## What they share
 
 - **A language and foundation** — all three are Go, built against the Stellar RPC and XDR libraries, reusing the same patterns for transaction assembly, ScVal decoding, and contract-spec handling. A contributor who learns one moves easily to the others.
