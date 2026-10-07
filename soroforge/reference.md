@@ -4,6 +4,7 @@
 
 | Command | What it does |
 |---|---|
+| `soroforge init` | Write a starter `soroforge.yaml`, one alias per contract built under `target/`. Never overwrites without `--force`. |
 | `soroforge deploy <alias>` | Upload the WASM (skipped if already on-chain), instantiate the contract, record it, and register it with the network's `sorovault_url` if set. |
 | `soroforge upgrade <alias>` | Upload new WASM and invoke the contract's upgrade entrypoint (`upgrade_fn`, default `upgrade`). A no-op if the bytecode is unchanged. |
 | `soroforge list` | Tracked contracts; `--network` filters. |

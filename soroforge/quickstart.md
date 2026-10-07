@@ -1,56 +1,60 @@
 # Quickstart
 
-Deploy a contract to testnet and see it tracked. You need Go 1.22+ (or Docker), a Postgres instance, a compiled contract WASM, and a funded testnet key.
+Deploy a contract to testnet and see it tracked. You need Docker (for Postgres), a compiled contract, and a funded testnet account.
 
-> Commands and flags below reflect the intended design; confirm exact names against your build's `--help` output and README.
+## 1. Install SoroForge
 
-## 1. Start the stack
-
-```bash
-git clone https://github.com/soroworks/SoroForge.git
-cd SoroForge
-cp .env.example .env      # set DATABASE_URL and your deployer key handling
-docker compose up -d      # brings up Postgres
-make migrate
-```
-
-## 2. Describe your networks and contracts
-
-Edit `soroforge.yaml`:
-
-```yaml
-networks:
-  testnet:
-    rpc_url: https://soroban-testnet.stellar.org
-    passphrase: "Test SDF Network ; September 2015"
-
-contracts:
-  my-token:
-    wasm: ./build/my_token.wasm
-```
-
-## 3. Dry-run first
-
-Assemble the deployment transaction without submitting it, to inspect what would happen:
+Download a binary for your platform from the [latest release](https://github.com/soroworks/soroforge/releases/latest), or build it with Go 1.25+:
 
 ```bash
-soroforge deploy my-token --network testnet --dry-run
+go install github.com/soroworks/soroforge/cmd/soroforge@latest
 ```
 
-## 4. Deploy for real
+## 2. Start Postgres
+
+SoroForge records every deploy in Postgres. From a clone of the repository:
 
 ```bash
-soroforge deploy my-token --network testnet
+git clone https://github.com/soroworks/soroforge.git && cd soroforge
+docker compose up -d     # Postgres on localhost:5432
+make migrate-up          # create the schema
+export DATABASE_URL=postgres://soroforge:soroforge@localhost:5432/soroforge?sslmode=disable
 ```
 
-SoroForge uploads the WASM, instantiates the contract, and records the resulting contract ID, WASM hash, deployer, transaction hash, and ledger.
+## 3. Describe your contracts
 
-## 5. Inspect what's tracked
+From your contract project, after `stellar contract build`:
+
+```bash
+soroforge init
+```
+
+`init` writes a `soroforge.yaml` with one alias per contract it finds under `target/wasm32v1-none/release` (or the older `wasm32-unknown-unknown`), targeting testnet. Open it and adjust anything you need — constructor arguments, a mainnet network, a `sorovault_url`.
+
+## 4. Provide a key
+
+```bash
+export SOROFORGE_KEYSTORE_PATH=~/.config/soroforge/testnet.key   # a file containing only S...
+```
+
+Fund the account at <https://friendbot.stellar.org>. See [Configuration](configuration.md) before using a real key.
+
+## 5. Dry-run, then deploy
+
+```bash
+soroforge deploy counter --dry-run       # simulates both transactions, submits nothing
+soroforge deploy counter --notes "v1.0.0"
+```
+
+SoroForge uploads the WASM (skipped if it is already on-chain), instantiates the contract, and records the contract ID, WASM hash, deployer, transaction and ledger.
+
+## 6. Check what is tracked
 
 ```bash
 soroforge list
-soroforge history my-token
-soroforge status my-token --network testnet   # drift check: on-chain vs tracked
+soroforge history counter
+soroforge status counter     # exit 0 in sync, 2 if the chain disagrees with the record
+soroforge status --all       # every tracked contract at once
 ```
 
 ## Next steps
@@ -58,3 +62,4 @@ soroforge status my-token --network testnet   # drift check: on-chain vs tracked
 - [Configuration](configuration.md) — key handling and multi-network setup
 - [Concepts](concepts.md) — upgrades and drift detection
 - [CLI & API reference](reference.md)
+- [Using the tools together](../workflow.md) — register deploys in SoroVault automatically

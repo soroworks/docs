@@ -1,46 +1,50 @@
 # Quickstart
 
-Simulate a contract call and check a contract's health, with no database and no keys to sign. You need Go 1.22+ (or Docker) and a contract on testnet to point at.
+Simulate a contract call and check a contract's health — no database, no keys, no configuration. Everything below runs against the public testnet; the contract used is the testnet native-asset contract.
 
-> Commands and flags below reflect the intended design; confirm against your build's `--help` and README.
+## 1. Install
 
-## 1. Build and run
+Download a binary from the [latest release](https://github.com/soroworks/soroprobe/releases/latest), or build with Go 1.25+:
 
 ```bash
-git clone https://github.com/soroworks/SoroProbe.git
-cd SoroProbe
-make build
+go install github.com/soroworks/soroprobe/cmd/soroprobe@latest
 ```
-
-SoroProbe defaults to the public testnet RPC; no setup needed to start.
 
 ## 2. Simulate a call
 
-Dry-run an invocation and see what would happen — result, success, and cost:
-
 ```bash
-soroprobe simulate <contract_id> <function> [args...]
+soroprobe simulate CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC decimals
 ```
 
-Add `--json` for machine-readable output.
+You get whether the call would succeed, the decoded return value (`7`), its resource cost and fee, and the ledger entries it would touch. A call the contract rejects is reported as `FAILED` with the host's error and still exits 0 — it is an answer, not a tool error. Add `--json` for scripting.
 
-## 3. Inspect contract state
-
-Read the contract's on-chain entries and see how healthy they are — including how close anything is to expiring:
+## 3. Inspect state health
 
 ```bash
-soroprobe inspect <contract_id>
+soroprobe inspect CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC
 ```
 
-## 4. Run a combined health check (CI-friendly)
+This reports how close the contract's instance and code entries are to expiring, in ledgers and approximate time. Name data entries to include with `--key sym:Admin`.
+
+## 4. Gate CI on it
 
 ```bash
-soroprobe check <contract_id>
+soroprobe check CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC --fn decimals
+echo $?    # 0 pass, 1 unhealthy, 2 SoroProbe could not run
 ```
 
-This confirms the contract is deployed, its code/instance is live and not near expiration, and a read-only call simulates successfully. It exits non-zero on failure, so you can drop it straight into a pipeline.
+For several contracts, list them in a file and run `soroprobe check --file checks.json`.
+
+## 5. Optional: type arguments from SoroVault
+
+If you run [SoroVault](../sorovault/README.md), point SoroProbe at it and bare arguments are encoded as the types the function declares, instead of guessed:
+
+```bash
+export SOROVAULT_URL=http://localhost:8080
+```
 
 ## Next steps
 
 - [Concepts](concepts.md) — how simulation and expiration reporting work
+- [Configuration](configuration.md)
 - [CLI & API reference](reference.md)
