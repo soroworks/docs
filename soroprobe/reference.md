@@ -1,27 +1,45 @@
 # CLI & API reference
 
-> Names and flags reflect the intended design; confirm against your build's `--help` and README.
-
 ## CLI
 
 ### `soroprobe simulate <contract> <fn> [args...]`
-Build and simulate an invocation. Prints whether it would succeed, the decoded return value, and estimated resource costs/fees. `--json` for scripting.
+Build and simulate an invocation: whether it would succeed, the decoded return value, resource cost, ledger footprint, and `RESTORE REQUIRED` if archived entries block it. A call the contract rejects is reported as `FAILED` and **exits 0** — it is an answer, not a tool error. Use `check` for a non-zero exit.
 
 ### `soroprobe inspect <contract>`
-Read the contract's instance/code/data entries and report state health, flagging anything near expiration.
+Report expiration health of the contract's instance and code entries, and any data entries named with `--key` (repeatable, `type:value`). `--durability persistent|temporary`.
 
 ### `soroprobe check <contract>`
-Combined health check (deployed, live, not near expiration, read-only call simulates). Exits non-zero on failure for CI.
+Combined check for CI, in order: `deployed`, `instance_ttl`, `code_ttl`, any `data_ttl`, then `simulate` when `--fn` is given (`--arg` repeatable). A TTL warning does not fail the check; `critical`, `expired` and `missing` do.
+
+| Exit code | Meaning |
+|---|---|
+| `0` | All checks passed |
+| `1` | A check failed — the contract has a problem |
+| `2` | SoroProbe could not run — bad input, or RPC unreachable |
+
+### `soroprobe serve`
+Run the HTTP API. `--addr` overrides `HTTP_ADDR`.
+
+Global flags: `--json`, `--config`, `--rpc-url`, `--network-passphrase`, `--source-account`, `--log-level`, `--timeout`, `--warn-ledgers`, `--critical-ledgers`, `--sorovault-url`.
+
+## Arguments
+
+Arguments are `type:value` — `u32:5`, `i128:-100`, `sym:transfer`, `str:"hi"`, `bytes:deadbeef`, `addr:G…`. Collections are JSON:
+
+```bash
+soroprobe simulate CDEF… set_weights 'map:[["sym:alice", "u32:3"], ["sym:bob", "u32:1"]]'
+soroprobe simulate CDEF… batch 'vec:["u32:1", "u32:2"]'
+```
+
+A bare value is inferred (digits become `i128`). With `--sorovault-url`, bare values — including collection elements — are typed from the contract's interface instead, and an unknown function or wrong argument count is rejected before simulating.
 
 ## HTTP API
 
-The same operations are available over HTTP for pipeline use:
+| Method | Path | Purpose |
+|---|---|---|
+| `GET` | `/healthz` | Liveness. Does not call the network. |
+| `POST` | `/v1/simulate` | `{"contract_id", "function", "args"}` |
+| `GET` | `/v1/inspect/{contract}` | `?key=` (repeatable), `?durability=` |
+| `GET` | `/v1/check/{contract}` | `?fn=`, `?arg=`, `?key=`, `?durability=` |
 
-- `GET /health` — process status and RPC reachability
-- `POST /api/simulate` — simulate a call, returns result + costs
-- `GET /api/contracts/{id}/inspect` — state health of a contract
-- `GET /api/contracts/{id}/check` — combined check result
-
-## Exit codes & output
-
-`check` (and `simulate` on a failed simulation) return non-zero, so pipelines can gate on them. `--json` on the CLI returns structured output matching the API responses, so scripts and humans share one shape.
+The API is read-only; no route submits anything. A contract that fails its check still returns **200** — read `success` / `ok` in the body. `400` is bad input (including an unknown function or wrong argument count when typing from SoroVault); `502` is an upstream RPC failure.

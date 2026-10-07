@@ -1,36 +1,41 @@
 # CLI & API reference
 
-> Names and flags reflect the intended design; confirm against your build's `--help` and README.
-
 ## CLI
 
-### `soroforge deploy <contract> --network <name> [--dry-run]`
-Upload a contract's WASM and instantiate it on the target network, recording the result. `--dry-run` assembles without submitting.
+| Command | What it does |
+|---|---|
+| `soroforge deploy <alias>` | Upload the WASM (skipped if already on-chain), instantiate the contract, record it, and register it with the network's `sorovault_url` if set. |
+| `soroforge upgrade <alias>` | Upload new WASM and invoke the contract's upgrade entrypoint (`upgrade_fn`, default `upgrade`). A no-op if the bytecode is unchanged. |
+| `soroforge list` | Tracked contracts; `--network` filters. |
+| `soroforge history <alias>` | Full deploy/upgrade timeline, newest first. |
+| `soroforge status <alias>` | Compare the on-chain WASM hash with the recorded one. |
+| `soroforge serve` | Run the HTTP API. Requires `SOROFORGE_API_TOKEN`. |
+| `soroforge migrate up\|down\|version` | Manage the schema. |
+| `soroforge version` | Print the version. |
 
-### `soroforge upgrade <contract> --network <name> [--dry-run]`
-Deploy new WASM for an existing tracked contract, recording the version transition.
+Global flags: `--config/-c`, `--network/-n`, `--log-level`, `--json`. Output goes to stdout and logs to stderr, so `--json` output stays pipeable.
 
-### `soroforge list`
-Show tracked contracts, grouped by network.
+`deploy` and `upgrade` take `--dry-run` and `--notes`. A dry run assembles and simulates every transaction, prints the envelopes and the resulting contract address, and submits, records and registers nothing — safe to point at mainnet.
 
-### `soroforge history <contract>`
-Show the full deploy/upgrade history of one contract.
+### `status` exit codes
 
-### `soroforge status <contract> --network <name>`
-Drift check: compare the on-chain WASM hash against the tracked record. Exit non-zero on drift, so it works in CI.
-
-Global flags typically include `--json` for machine-readable output and `--config` to point at a specific `soroforge.yaml`.
+| Code | Meaning |
+|---|---|
+| `0` | `in_sync` — the chain matches the record |
+| `1` | The check could not be completed |
+| `2` | `drift`, `untracked`, or `missing` on-chain |
 
 ## HTTP API
 
-The same operations are exposed over HTTP for pipeline integration:
+Every `/v1` route requires `Authorization: Bearer $SOROFORGE_API_TOKEN`. The server binds `127.0.0.1:8080` by default because it holds a signing key.
 
-- `GET /health` — process and RPC/DB reachability
-- `GET /api/contracts` — tracked contracts
-- `GET /api/contracts/{id}/history` — one contract's history
-- `POST /api/deploy` / `POST /api/upgrade` — trigger operations from CI (with appropriate key handling)
-- `GET /api/contracts/{id}/status` — drift check
+| Method | Path | Purpose |
+|---|---|---|
+| `GET` | `/health` | Liveness. No auth. |
+| `POST` | `/v1/deploy` | `{"alias", "network", "notes", "dry_run"}` → `201` (`200` for a dry run) |
+| `POST` | `/v1/upgrade` | Same body → `200` |
+| `GET` | `/v1/contracts?network=` | Tracked contracts |
+| `GET` | `/v1/contracts/{network}/{alias}/history` | Deployment history |
+| `GET` | `/v1/contracts/{network}/{alias}/status` | Drift check |
 
-## Exit codes
-
-CLI commands intended for CI (`status`, and `deploy`/`upgrade` in non-dry-run) return non-zero on failure or drift, so pipelines can gate on them.
+Unknown JSON fields are rejected, so a misspelled `dry_run` fails instead of deploying for real. Drift returns `200` with `"state": "drift"` — the check ran and produced an answer. Deploy and upgrade results carry a `catalog` field when a `sorovault_url` is configured, reporting whether SoroVault registration succeeded.
