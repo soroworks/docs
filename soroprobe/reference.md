@@ -11,6 +11,8 @@ Report expiration health of the contract's instance and code entries, and any da
 ### `soroprobe check <contract>`
 Combined check for CI, in order: `deployed`, `instance_ttl`, `code_ttl`, any `data_ttl`, then `simulate` when `--fn` is given (`--arg` repeatable). A TTL warning does not fail the check; `critical`, `expired` and `missing` do.
 
+`--file checks.json` (or `-` for stdin) runs a list of checks in one invocation — `{"checks": [{"name", "contract_id", "function", "args", "data_keys", "data_durability"}]}` — and exits 2 if any could not run, else 1 if any failed, else 0.
+
 | Exit code | Meaning |
 |---|---|
 | `0` | All checks passed |
@@ -41,5 +43,6 @@ A bare value is inferred (digits become `i128`). With `--sorovault-url`, bare va
 | `POST` | `/v1/simulate` | `{"contract_id", "function", "args"}` |
 | `GET` | `/v1/inspect/{contract}` | `?key=` (repeatable), `?durability=` |
 | `GET` | `/v1/check/{contract}` | `?fn=`, `?arg=`, `?key=`, `?durability=` |
+| `POST` | `/v1/checks` | `{"checks": [...]}` — up to 20 checks in one request |
 
 The API is read-only; no route submits anything. A contract that fails its check still returns **200** — read `success` / `ok` in the body. `400` is bad input (including an unknown function or wrong argument count when typing from SoroVault); `502` is an upstream RPC failure.
