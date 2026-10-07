@@ -66,5 +66,5 @@ A typical pipeline deploys, then gates on health:
 soroforge deploy counter --network testnet --json > deploy.json
 CONTRACT=$(jq -r .contract_id deploy.json)
 soroprobe check "$CONTRACT" --fn get_count     # exit 1 if unhealthy, 2 if the tool could not run
-soroforge status counter --network testnet     # exit 2 on drift
+soroforge status --all --network testnet       # exit 2 if any tracked contract drifted
 ```

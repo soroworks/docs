@@ -9,6 +9,7 @@
 | `soroforge list` | Tracked contracts; `--network` filters. |
 | `soroforge history <alias>` | Full deploy/upgrade timeline, newest first. |
 | `soroforge status <alias>` | Compare the on-chain WASM hash with the recorded one. |
+| `soroforge status --all` | The same check for every contract tracked on the network — one CI gate for all of them. |
 | `soroforge serve` | Run the HTTP API. Requires `SOROFORGE_API_TOKEN`. |
 | `soroforge migrate up\|down\|version` | Manage the schema. |
 | `soroforge version` | Print the version. |
@@ -21,9 +22,9 @@ Global flags: `--config/-c`, `--network/-n`, `--log-level`, `--json`. Output goe
 
 | Code | Meaning |
 |---|---|
-| `0` | `in_sync` — the chain matches the record |
+| `0` | `in_sync` — the chain matches the record (with `--all`: every contract) |
 | `1` | The check could not be completed |
-| `2` | `drift`, `untracked`, or `missing` on-chain |
+| `2` | `drift`, `untracked`, or `missing` on-chain (with `--all`: any contract) |
 
 ## HTTP API
 
@@ -37,5 +38,6 @@ Every `/v1` route requires `Authorization: Bearer $SOROFORGE_API_TOKEN`. The ser
 | `GET` | `/v1/contracts?network=` | Tracked contracts |
 | `GET` | `/v1/contracts/{network}/{alias}/history` | Deployment history |
 | `GET` | `/v1/contracts/{network}/{alias}/status` | Drift check |
+| `GET` | `/v1/contracts/{network}/status` | Drift check of every tracked contract; `in_sync` is the verdict |
 
 Unknown JSON fields are rejected, so a misspelled `dry_run` fails instead of deploying for real. Drift returns `200` with `"state": "drift"` — the check ran and produced an answer. Deploy and upgrade results carry a `catalog` field when a `sorovault_url` is configured, reporting whether SoroVault registration succeeded.
