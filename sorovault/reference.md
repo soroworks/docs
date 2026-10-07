@@ -26,6 +26,7 @@ Every read command takes `--json`, which prints exactly what the API serves.
 | `GET` | `/api/contracts/{id}/versions` | Every stored interface version |
 | `POST` | `/api/contracts/{id}/refresh` | Re-check against the network |
 | `GET` | `/api/contracts/{id}/client.ts` | Typed TypeScript client — `?wasm_hash=`, `?download=1` |
+| `GET` | `/api/openapi.json` | OpenAPI 3.1 description of this API, for client generators and API explorers |
 
 **Status codes.** `404` means the contract is not there; `422` means it exists but has no interface to serve (a Stellar asset contract, or a module without a spec section); `503` means the RPC endpoint serves a different network than configured.
 
