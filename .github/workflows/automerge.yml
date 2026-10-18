@@ -41,8 +41,8 @@ jobs:
       - name: Merge passing pull requests
         env:
           GH_TOKEN: ${{ github.token }}
-          REQUIRED_CHECKS: ""
+          REQUIRED_CHECKS: "links"
           PROTECTED_PATHS: ".github/"
-          CI_WORKFLOW: ""
+          CI_WORKFLOW: "ci.yml"
           DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || 'false' }}
         run: bash .github/scripts/automerge.sh
