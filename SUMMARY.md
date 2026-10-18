@@ -2,6 +2,7 @@
 
 * [SoroWorks](README.md)
 * [Using the tools together](workflow.md)
+* [Soroban glossary](glossary.md)
 
 ## SoroForge — deploy
 
