@@ -29,4 +29,5 @@
 * [Configuration](sorovault/configuration.md)
 * [Concepts](sorovault/concepts.md)
 * [API & CLI reference](sorovault/reference.md)
+* [List and get commands](sorovault/commands/list-get.md)
 * [Contributing](sorovault/contributing.md)
